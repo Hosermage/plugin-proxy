@@ -13,7 +13,7 @@ switch ($action) {
 		_beacon_call($beacon_host, $tracking_code);
 		break;
 	case 'rxn_preview':
-		_preview_pull($preview_host, $_GET['preview_key']);
+		_preview_pull($preview_host, $_GET['rxn_preview']);
 		break;
 }
 exit;
