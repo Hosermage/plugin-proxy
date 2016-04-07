@@ -25,7 +25,7 @@ function _preview_pull($host, $key)
 	header("Pragma: no-cache");
 	header("Expires: 0");
 	header('Content-type: text/javascript');
-	echo _curl_get($url)
+	echo _curl_get($url);
 }
 
 function _beacon_call($host, $key)
