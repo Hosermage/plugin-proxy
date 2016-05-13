@@ -1,8 +1,13 @@
 <?php
+// Disclaimer:
+//	Use this script only if you have the php Memcache library installed, it is not
+//	to be confused with Memcached library.  There is a separate version for Memcached library.
 
 // You must define these with real values
+$memcache_server = 'localhost';
+$memcache_port = '11211';
 $beacon_host = '';
-$preview_host = '';
+$js_host = '';
 $tracking_code = '';
 
 // Perform requested actions
@@ -13,17 +18,59 @@ switch ($action) {
 		_beacon_call($beacon_host, $tracking_code);
 		break;
 	case 'rxn_preview':
-		_preview_pull($preview_host, $_GET['rxn_preview']);
+		_preview_pull($js_host, $_GET['rxn_preview']);
 		break;
+	default:
+		_serve_js($js_host, $tracking_code);
 }
 exit;
+
+
+function _serve_js($host, $key)
+{
+	$url = $host . '/js/v3/' . $key . '/abx.js';
+	$memcache_key = 'ABX::'.$key;
+	$error_flag = false;
+	$fetch_flag = true;
+	$write_flag = true;
+	$js_data = '';
+	$memcache = new Memcache;
+	if ($memcache->connect($memcache_server, $memcache_port))
+	{
+		$js_data = $memcache->get($memcache_key);
+		if (!is_empty($js_data))
+		{
+			$fetch_flag = false;
+			$write_flag = false;
+		}
+	} else {
+		$error_flag = true;
+		$write_flag = false;
+	}
+	if ($fetch_flag)
+	{
+		$js_data = _curl_get($url);
+		if ($write_flag)
+		{
+			$memcache->set($memcache_key, $js_data, 0, 3600);
+		}
+	}
+	header('Cache-Control: max-age=3600');
+	header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time()+3600));
+	header('Content-type: text/javascript');
+	if ($error_flag)
+	{
+		echo "// Unable to connect to memcache server, please check server configuration\n";
+	}
+	echo $js_data;
+}
 
 function _preview_pull($host, $key)
 {
 	$url = $host . '/js/' . $key . '/preview.js';
-	header("Cache-Control: no-cache, no-store, must-revalidate");
-	header("Pragma: no-cache");
-	header("Expires: 0");
+	header('Cache-Control: no-cache, no-store, must-revalidate');
+	header('Pragma: no-cache');
+	header('Expires: 0');
 	header('Content-type: text/javascript');
 	echo _curl_get($url);
 }
