@@ -21,12 +21,12 @@ switch ($action) {
 		_preview_pull($js_host, $_GET['rxn_preview']);
 		break;
 	default:
-		_serve_js($js_host, $tracking_code);
+		_serve_js($js_host, $tracking_code, $cache_dir);
 }
 exit;
 
 
-function _serve_js($host, $key)
+function _serve_js($host, $key, $cache_dir)
 {
 	$cachefile = $cache_dir.'/abx.js';
 	$url = $host . '/js/v3/' . $key . '/abx.js';
@@ -50,7 +50,7 @@ function _serve_js($host, $key)
 		$js_data = _curl_get($url);
 		if ($write_flag)
 		{
-			file_put_contents($filecache, $js_data, LOCK_EX);
+			file_put_contents($cachefile, $js_data, LOCK_EX);
 		}
 	}
 	header('Cache-Control: max-age=3600');

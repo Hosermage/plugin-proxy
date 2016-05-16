@@ -1,7 +1,7 @@
 <?php
 // Disclaimer:
-//	Use this script only if you have the php Memcache library installed, it is not
-//	to be confused with Memcached library.  There is a separate version for Memcached library.
+//	Use this script only if you have the php "Memcache" library installed, it is not
+//	to be confused with "Memcached" library.  There is a separate version for Memcached library.
 
 // You must define these with real values
 $memcache_server = 'localhost';
@@ -21,12 +21,12 @@ switch ($action) {
 		_preview_pull($js_host, $_GET['rxn_preview']);
 		break;
 	default:
-		_serve_js($js_host, $tracking_code);
+		_serve_js($js_host, $tracking_code, $memcache_server, $memcache_port);
 }
 exit;
 
 
-function _serve_js($host, $key)
+function _serve_js($host, $key, $mchost, $mcport)
 {
 	$url = $host . '/js/v3/' . $key . '/abx.js';
 	$memcache_key = 'ABX::'.$key;
@@ -35,10 +35,10 @@ function _serve_js($host, $key)
 	$write_flag = true;
 	$js_data = '';
 	$memcache = new Memcache;
-	if ($memcache->connect($memcache_server, $memcache_port))
+	if ($memcache->connect($mchost, $mcport))
 	{
 		$js_data = $memcache->get($memcache_key);
-		if (!is_empty($js_data))
+		if (!empty($js_data))
 		{
 			$fetch_flag = false;
 			$write_flag = false;
@@ -52,7 +52,10 @@ function _serve_js($host, $key)
 		$js_data = _curl_get($url);
 		if ($write_flag)
 		{
-			$memcache->set($memcache_key, $js_data, 0, 3600);
+			if (!$memcache->set($memcache_key, $js_data, 0, 3600))
+			{
+				$error_flag = true;
+			}
 		}
 	}
 	header('Cache-Control: max-age=3600');
